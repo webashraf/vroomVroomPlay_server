@@ -32,24 +32,30 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const carCollection = client.db("vroomCarDb").collection("cars");
+    const carsCollection = client.db("carVroomDb").collection("vroomCars")
 
-    // app.get("/cars", async (req,  res) =>{
-    //   // const subCategory = req.params.subcategory;
-    //   // console.log(subCategory);
-    //   const data  = req.headers.category;
-    //   console.log(data);
-    //   const result = await carCollection.find({sub_categories: data}).toArray();
-    //   res.send(result)
-    // })
+    // Get all cars
+    app.get("/cars", async (req,  res) =>{
+      const result = await carCollection.find().limit(20).toArray();
+      res.send(result)
+    })
+    // get cars by sub category
     app.get("/cars/:text", async (req,  res) =>{
       const data = req.params.text;
-      console.log(data);
+      // console.log(data);
       // const data  = req.headers.category;
       // console.log(data);
       const result = await carCollection.find({sub_categories: req.params.text}).limit(2).toArray();
       res.send(result)
     })
 
+    // post car on data base
+    app.post('/addcar', async (req, res) => {
+      const carBody = req.body;
+      console.log(carBody);
+      const result = await carsCollection.insertOne(carBody);
+      res.send(result);
+    })
 
 
 
