@@ -15,7 +15,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mjqzlpi.mongodb.net/?retryWrites=true&w=majority1`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -57,6 +57,21 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/mycars', async(req, res) => {
+      const email = req.query.email;
+      const filter = {seller_email : email}
+      const result = await carsCollection.find(filter).toArray();
+      // console.log(email);
+      res.send(result);
+    })
+
+    app.delete('/deletecar/:id', async(req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const quary = {_id: new ObjectId(id)};
+      const result = await carsCollection.deleteOne(quary);
+      res.send(result)
+    })
 
 
 
