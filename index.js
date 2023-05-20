@@ -12,9 +12,7 @@ app.use(express.json());
 //------------------------------------//
 //-----------------------------------//
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.37yfgb3.mongodb.net/?retryWrites=true&w=majority`;
-
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -32,6 +30,24 @@ async function run() {
     const carCollection = client.db("vroomCarDb").collection("allCars");
     const myCarsCollection = client.db("vroomCarDb").collection("myCars");
 
+    // Create Index for search //
+    const indexKeys = { title: 1 };
+    const indexOptions = { name: "title" };
+
+    await myCarsCollection.createIndex(indexKeys, indexOptions);
+
+    app.get("/toySearch/:title", async (req, res) => {
+      const title = req.params.title;
+      console.log(title);
+      const result = await myCarsCollection
+        .find({
+          name: { $regex: title, $options: "i" },
+        })
+        .hint("title")
+        .toArray();
+      res.send(result);
+    });
+
     // Get all cars
     app.get("/cars", async (req, res) => {
       const result = await carCollection.find().limit(20).toArray();
@@ -41,18 +57,20 @@ async function run() {
     // get cars by sub category
     app.get("/cars/:text", async (req, res) => {
       const data = req.params.text;
-      const result = await carCollection
-        .find({ sub_categories: req.params.text })
+      const result = await myCarsCollection
+        .find({
+          sub_category: req.params.text,
+        })
         .limit(2)
         .toArray();
       res.send(result);
     });
 
-
     // post car on data base
     app.post("/addcar", async (req, res) => {
       const carBody = req.body;
-      console.log(carBody);
+      // const carBody.postAt = new Date();
+      // console.log(postAt);
       const result = await myCarsCollection.insertOne(carBody);
       res.send(result);
     });
@@ -63,10 +81,11 @@ async function run() {
       const filter = { seller_email: req.query.email };
       if (req.query.email) {
         console.log(req.query.email, email);
-        const result = await myCarsCollection.find({saller_email: req.query.email}).toArray();
+        const result = await myCarsCollection
+          .find({ saller_email: req.query.email })
+          .toArray();
         res.send(result);
-      }
-      else{
+      } else {
         const result = await myCarsCollection.find({}).limit(20).toArray();
         res.send(result);
       }
