@@ -27,8 +27,8 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const carCollection = client.db("vroomCarDb").collection("allCars");
-    const myCarsCollection = client.db("vroomCarDb").collection("myCars");
+    // const carCollection = client.db("vroomCarDb").collection("");
+    const myCarsCollection = client.db("vroomCarDb").collection("allCars");
 
     // Create Index for search //
     const indexKeys = { title: 1 };
@@ -36,9 +36,11 @@ async function run() {
 
     await myCarsCollection.createIndex(indexKeys, indexOptions);
 
+
+    // Search car by car name
     app.get("/toySearch/:title", async (req, res) => {
       const title = req.params.title;
-      console.log(title);
+      // console.log(title);
       const result = await myCarsCollection
         .find({
           name: { $regex: title, $options: "i" },
@@ -47,6 +49,17 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
+    // Sorting all car //
+    app.get("/allcars", async (req, res) => {
+      const sortOrder = req.query.sort === 'asc' ? 1 : -1;
+      // console.log(sortOrder);
+      const result = await myCarsCollection.find().limit(20).sort({ price : sortOrder }).toArray();
+
+      res.json(result);
+    })
+
+
 
     // Get all cars
     app.get("/cars", async (req, res) => {
@@ -69,18 +82,20 @@ async function run() {
     // post car on data base
     app.post("/addcar", async (req, res) => {
       const carBody = req.body;
-      // const carBody.postAt = new Date();
+      console.log(carBody);
+      carBody.postAt = new Date();
       // console.log(postAt);
       const result = await myCarsCollection.insertOne(carBody);
       res.send(result);
     });
 
+    // Get only login user car //
     app.get("/mycars", async (req, res) => {
       const email = req.query.email;
-      console.log(email);
+      // console.log(email);
       const filter = { seller_email: req.query.email };
       if (req.query.email) {
-        console.log(req.query.email, email);
+        // console.log(req.query.email, email);
         const result = await myCarsCollection
           .find({ saller_email: req.query.email })
           .toArray();
@@ -92,6 +107,7 @@ async function run() {
       // console.log(email);
     });
 
+    // Delete a car //
     app.delete("/deletecar/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(id);
