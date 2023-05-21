@@ -42,7 +42,6 @@ async function run() {
     app.get("/toySearch/:title", async (req, res) => {
       const title = req.params.title;
       // console.log(title);
-      // if (title) {
       const result = await myCarsCollection
         .find({
           name: { $regex: title, $options: "i" },
@@ -50,10 +49,6 @@ async function run() {
         .hint("title")
         .toArray();
       res.send(result);
-      // } else {
-      //   const result = await carCollection.find().limit(20).toArray();
-      //   res.send(result);
-      // }
     });
 
     // Sorting all car //
