@@ -26,7 +26,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+    client.connect();
     // const carCollection = client.db("vroomCarDb").collection("");
     const myCarsCollection = client.db("vroomCarDb").collection("allCars");
 
@@ -35,7 +36,6 @@ async function run() {
     const indexOptions = { name: "title" };
 
     await myCarsCollection.createIndex(indexKeys, indexOptions);
-
 
     // Search car by car name
     app.get("/toySearch/:title", async (req, res) => {
@@ -52,14 +52,50 @@ async function run() {
 
     // Sorting all car //
     app.get("/allcars", async (req, res) => {
-      const sortOrder = req.query.sort === 'asc' ? 1 : -1;
+      const sortOrder = req.query.sort === "asc" ? 1 : -1;
       // console.log(sortOrder);
-      const result = await myCarsCollection.find().limit(20).sort({ price : sortOrder }).toArray();
+      const result = await myCarsCollection
+        .find()
+        .limit(20)
+        .sort({ price: sortOrder })
+        .toArray();
 
       res.json(result);
-    })
+    });
 
+    // Get single cars //
+    app.get("/singleCars/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await myCarsCollection.findOne(query);
+      res.send(result);
+    });
 
+    // Update single item //
+    app.put("/updateAItem/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const carBody = req.body;
+      console.log(carBody);
+      const options = { upsert: true };
+      const updateCar = {
+        $set: {
+          photoUrl: carBody.photoUrl,
+          name: carBody.name,
+          price: carBody.price,
+          availableQuantity: carBody.availableQuantity,
+          description: carBody.description,
+        },
+      };
+      const result = await myCarsCollection.updateOne(
+        query,
+        updateCar,
+        options
+      );
+      res.send(result);
+    });
 
     // Get all cars
     app.get("/cars", async (req, res) => {
@@ -92,12 +128,16 @@ async function run() {
     // Get only login user car //
     app.get("/mycars", async (req, res) => {
       const email = req.query.email;
+      // const sort = req.query.sort;
+      const sortOrder = req.query.sort === "asc" ? 1 : -1;
+      // console.log(sortOrder);
       // console.log(email);
       const filter = { seller_email: req.query.email };
       if (req.query.email) {
         // console.log(req.query.email, email);
         const result = await myCarsCollection
           .find({ saller_email: req.query.email })
+          .sort({ price: sortOrder })
           .toArray();
         res.send(result);
       } else {
